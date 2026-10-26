@@ -1,0 +1,10 @@
+## Syntax highlighting for Brainfuck.
+
+syntax brainfuck "\.(bf|b)$"
+comment ""
+
+color green "[^][<>+.,[:space:]-]+"
+color magenta "[<>]"
+color red "[-+]"
+color magenta "[][]"
+color yellow "[.,]"

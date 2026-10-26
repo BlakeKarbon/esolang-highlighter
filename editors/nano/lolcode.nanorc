@@ -1,0 +1,15 @@
+## Syntax highlighting for LOLCODE.
+
+syntax lolcode "\.lols?$"
+header "^[[:space:]]*HAI\>"
+comment "BTW "
+
+# Later rules paint over earlier ones.
+icolor brightcyan "\<[A-Za-z_][A-Za-z0-9_]*"
+color brightgreen "\<[0-9]+(\.[0-9]+)?"
+icolor magenta "\<(HOW[[:space:]]+IZ[[:space:]]+I|IF[[:space:]]+U[[:space:]]+SAY[[:space:]]+SO|IM[[:space:]]+IN[[:space:]]+YR|IM[[:space:]]+OUTTA[[:space:]]+YR|IS[[:space:]]+NOW[[:space:]]+A|YA[[:space:]]+RLY|NO[[:space:]]+WAI|I[[:space:]]+HAS[[:space:]]+A|SUM[[:space:]]+OF|DIFF[[:space:]]+OF|PRODUKT[[:space:]]+OF|QUOSHUNT[[:space:]]+OF|BOTH[[:space:]]+SAEM|DIFFRINT|BIGGR[[:space:]]+OF|SMALLR[[:space:]]+OF|EITHER[[:space:]]+OF|BOTH[[:space:]]+OF|WON[[:space:]]+OF|ALL[[:space:]]+OF|ANY[[:space:]]+OF|KTHXBYE|VISIBLE|GIMMEH|MKAY|MAEK|MOD[[:space:]]+OF|HAI|BTW|OBTW|TLDR|AN|YR|R|ITZ|NOT|SMOOSH|LIEK|CAN[[:space:]]+HAS)\>"
+icolor magenta "\<(O[[:space:]]+RLY|WTF)\?"
+icolor cyan "\<(WIN|FAIL|NOOB|NUMBR|NUMBAR|YARN|TROOF|BUKKIT)\>"
+color brightred ""([^"]|"")*("|$)"
+icolor green "\<BTW\>.*"
+icolor green start="\<OBTW\>" end="\<TLDR\>"

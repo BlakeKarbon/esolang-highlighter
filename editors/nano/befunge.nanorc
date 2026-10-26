@@ -1,0 +1,11 @@
+## Syntax highlighting for Befunge-93.
+
+syntax befunge "\.(b93|befunge)$"
+comment ""
+
+color brightgreen "[0-9]"
+color red "[-+*/%!`]"
+color magenta "[><^v?_|#]"
+color yellow "[\$gp&~.,@:]"
+# String mode toggles on each quote and may run across lines.
+color brightred start=""" end="""

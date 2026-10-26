@@ -1,0 +1,28 @@
+{
+  "name": "jupyterlab-esolang-highlighter",
+  "version": "0.1.0",
+  "description": "Esoteric language highlighting for JupyterLab Markdown",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "scripts": {
+    "build:lib": "tsc",
+    "build": "jlpm build:lib && jupyter labextension build .",
+    "clean": "rimraf lib"
+  },
+  "dependencies": {
+    "@jupyterlab/application": "^4.0.0"
+  },
+  "devDependencies": {
+    "@jupyterlab/builder": "^4.0.0",
+    "rimraf": "^6.0.0",
+    "typescript": "~5.7.3"
+  },
+  "jupyterlab": {
+    "extension": true,
+    "outputDir": "jupyterlab/extension",
+    "_build": {
+      "load": "static/remoteEntry.4c2f03d1a321672cc711.js",
+      "extension": "./extension"
+    }
+  }
+}

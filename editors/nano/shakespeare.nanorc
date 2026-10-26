@@ -1,0 +1,11 @@
+## Syntax highlighting for the Shakespeare Programming Language.
+
+syntax shakespeare "\.spl$"
+comment ""
+
+# Later rules paint over earlier ones.
+color yellow "\<[A-Z][A-Z0-9_]*\>"
+color brightgreen "[+-]?\<[0-9]+"
+icolor magenta "\<(Speak[[:space:]]+your[[:space:]]+mind|Open[[:space:]]+your[[:space:]]+heart|Let[[:space:]]+us|You[[:space:]]+are|I[[:space:]]+am|Are[[:space:]]+you|Am[[:space:]]+I|Recall|Remember|If|Let|As|Thou|The|First|Second|Third|Fourth|Fifth|Sixth|Seventh|You|I|We|they)\>"
+icolor brightblue "\<(Act|Scene|Enter|Exit|Exeunt)\>"
+color green "\[[^]]*(\]|$)"

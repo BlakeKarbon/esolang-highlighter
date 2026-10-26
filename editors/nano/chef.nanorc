@@ -1,0 +1,14 @@
+## Syntax highlighting for Chef.
+## nano has no parser state, so ingredient units and method keywords are
+## highlighted wherever they appear, and titles and comments are not.
+
+syntax chef "\.chef$"
+comment ""
+
+color brightgreen "[0-9]+"
+color cyan " (g|kg|pinch(es)?|ml|l|dash(es)?) "
+color cyan " ((heaped|level) )?(cups?|teaspoons?|tablespoons?) "
+color magenta "\<(Take|Put|Fold|Add|Remove|Combine|Divide|Liquefy|Stir|Mix|Clean|Pour|Set aside|Serve with|Refrigerate)\>"
+color brightcyan "mixing bowl"
+color brightyellow "baking dish"
+color brightblue "^[[:space:]]*(Ingredients|Method)\.[[:space:]]*$"

@@ -1,0 +1,16 @@
+## Syntax highlighting for Rockstar.
+
+syntax rockstar "\.rock$"
+comment "(|)"
+
+# Later rules paint over earlier ones.
+icolor brightcyan "\<[A-Za-z]+"
+icolor magenta "\<(say|put|into|build|knock|split|join|let|be|is|are|was|were|am|has|have|likes|wants|takes|gives|with|if|else|while|until|continue|break|return|roll|cast|listen|whisper|shout|scream|and|or|not)\>"
+icolor brightblue "\<(true|false|null|empty|mysterious|nothing|nobody|nowhere|right|wrong)\>"
+# Contractions (isn't, don't) are never keywords.
+icolor brightcyan "\<[A-Za-z]+('[A-Za-z]+)+"
+color brightgreen "[0-9]+(\.[0-9]+)?"
+color brightred ""[^"]*("|$)"
+# An apostrophe inside a word is not a quote.
+color brightred "(^|[^A-Za-z])'[^']*('|$)"
+color green "\(.*"

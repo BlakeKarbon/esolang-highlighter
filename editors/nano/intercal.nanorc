@@ -1,0 +1,25 @@
+## Syntax highlighting for INTERCAL (INTERCAL-72 and C-INTERCAL extensions).
+
+syntax intercal "\.(i|intercal)$"
+header "^[[:space:]]*(\([0-9]+\)[[:space:]]*)?(PLEASE|DO)\>"
+comment ""
+
+# Later rules paint over earlier ones.
+color brightgreen "[0-9]+"
+color brightcyan "[.:,;][&V?∀¥∨]?[0-9]+"
+color brightgreen "#[&V?∀¥∨]?[0-9]+"
+# Unary operators follow a variable sigil, mesh or grouping mark.
+color red "[.:,;#'"][&V?∀¥∨]"
+color brightcyan "[.:,;]"
+color brightgreen "#"
+color magenta "['"]"
+icolor red "<-|[$~+]|¢|\<(SUB|BY)\>"
+color brightcyan "\([0-9]+\)"
+color brightyellow "%[0-9]+"
+icolor magenta "\<(ABSTAIN([[:space:]]+FROM)?|REINSTATE|COME[[:space:]]+FROM|NEXT([[:space:]]+FROM)?|FORGET|RESUME|STASH|RETRIEVE|IGNORE|REMEMBER|GIVE[[:space:]]+UP|READ[[:space:]]+OUT|WRITE[[:space:]]+IN|TRY[[:space:]]+AGAIN|GO[[:space:]]+(BACK|AHEAD)|WHILE|ONCE|AGAIN)\>"
+icolor cyan "\<(CALCULATING|NEXTING([[:space:]]+FROM)?|FORGETTING|RESUMING|STASHING|RETRIEVING|IGNORING|REMEMBERING|ABSTAINING|REINSTATING|READING[[:space:]]+OUT|WRITING[[:space:]]+IN|COMING[[:space:]]+FROM|GIVING[[:space:]]+UP|TRYING[[:space:]]+AGAIN|GOING[[:space:]]+(BACK|AHEAD)|COMMENTING)\>"
+# Statement identifier: DO, PLEASE, PLEASE DO, optionally MAYBE and NOT / N'T
+icolor brightblue "\<(MAYBE[[:space:]]+)?(PLEASE([[:space:]]+DO)?|DO)(N'T|[[:space:]]+NOT)?\>"
+# nano cannot tell valid statements from invalid ones, so only the
+# conventional PLEASE NOTE / DO NOTE comments are recognised.
+icolor green "\<NOTE\>.*"
