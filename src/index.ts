@@ -372,109 +372,159 @@ function tokenizeShakespeare(source: string): Token[] {
   return tokens;
 }
 
+// INTERCAL as C-INTERCAL lexes it (src/lexer.l): keywords are uppercase,
+// need no word boundaries, and a space in a keyword below stands for optional
+// whitespace. Latin synonyms are included.
 const INTERCAL_STATEMENTS = [
-  "ABSTAIN FROM", "ABSTAIN", "REINSTATE", "COME FROM", "NEXT FROM",
-  "NEXT", "FORGET", "RESUME", "STASH", "RETRIEVE", "IGNORE",
-  "REMEMBER", "GIVE UP", "READ OUT", "WRITE IN", "TRY AGAIN",
-  "GO BACK", "GO AHEAD", "WHILE", "ONCE", "AGAIN"
-].sort((a, b) => b.length - a.length);
+  "FORGET", "ALIENERE", "RESUME", "RECOLERE", "STASH", "EXUERE",
+  "RETRIEVE", "INUERE", "IGNORE", "DISSIMULARE", "REMEMBER", "MEMINISSE",
+  "ABSTAIN", "ABSTINERE", "REINSTATE", "REINSTARE", "READ OUT", "LEGERE EX",
+  "WRITE IN", "SCRIBERE IN", "PIN", "NEXT FROM", "DEINDERE A", "COME FROM",
+  "ADVENIRE DE", "NEXT", "DEINDE", "GIVE UP", "CONCEDERE", "DESPERARE",
+  "TRY AGAIN", "CONOR ITERUM", "GO BACK", "REDIRE", "GO AHEAD", "GRASSOR",
+  "CREATE", "CONFICE"
+];
+
+// Keywords that cannot start a statement.
+const INTERCAL_MODIFIERS = [
+  "FROM", "WHILE", "ONCE", "QUONDAM", "AGAIN", "ITERUM"
+];
 
 const INTERCAL_GERUNDS = [
-  "CALCULATING", "NEXTING FROM", "NEXTING", "FORGETTING", "RESUMING",
-  "STASHING", "RETRIEVING", "IGNORING", "REMEMBERING", "ABSTAINING",
-  "REINSTATING", "READING OUT", "WRITING IN", "COMING FROM",
-  "GIVING UP", "TRYING AGAIN", "GOING BACK", "GOING AHEAD", "COMMENTING"
-].sort((a, b) => b.length - a.length);
+  "CALCULATING", "CALCULANDUM", "FORGETTING", "ALIENENDUM", "RESUMING",
+  "RECOLERENDUM", "STASHING", "EXUENDUM", "RETRIEVING", "INUENDUM",
+  "IGNORING", "DISSIMULANDUM", "REMEMBERING", "MEMINISSENDUM", "ABSTAINING",
+  "ABSTINENDUM", "REINSTATING", "REINSTATANDUM", "READING OUT", "LEGENDUM",
+  "WRITING IN", "SCRIBENDUM", "COMMENT", "COMMENTS", "COMMENTING",
+  "COMMEMERO", "PINNING", "NEXTING FROM", "DEINDENDUM", "COMING FROM",
+  "ADVENENDUM", "NEXTING", "PROXIMANDUM", "WHILING", "LOOPING",
+  "TRYING AGAIN", "GOING BACK", "REDENDUM", "GOING AHEAD", "CREATING",
+  "CREATION", "CONFICENDUM"
+];
 
-function intercalWords(words: string[]): RegExp {
-  return new RegExp("^(?:" + words.map((w) => w.replace(/ /g, "\\s+")).join("|") + ")\\b", "i");
+const INTERCAL_KEYWORD_OPERATORS = ["SUB", "BY", "MULTIPLICATUS A"];
+
+const INTERCAL_STATEMENT_WORDS = new Set(INTERCAL_STATEMENTS.map((w) => w.replace(/ /g, "")));
+const INTERCAL_KEYWORD_KINDS = new Map<string, string>();
+for (const [words, kind] of [
+  [INTERCAL_STATEMENTS, "keyword"],
+  [INTERCAL_MODIFIERS, "keyword"],
+  [INTERCAL_GERUNDS, "type"],
+  [INTERCAL_KEYWORD_OPERATORS, "operator"]
+] as Array<[string[], string]>) {
+  for (const word of words) INTERCAL_KEYWORD_KINDS.set(word.replace(/ /g, ""), kind);
 }
 
-const INTERCAL_STATEMENT = intercalWords(INTERCAL_STATEMENTS);
-const INTERCAL_GERUND = intercalWords(INTERCAL_GERUNDS);
-// Statement identifier: DO, PLEASE, PLEASE DO, optionally MAYBE and NOT / N'T
-const INTERCAL_IDENTIFIER = /^(?:MAYBE\s+)?(?:PLEASE(?:\s+DO)?|DO)(?:N'T|\s+NOT)?\b/i;
-const INTERCAL_LINE_START = /^\s*(?:\(\d+\)\s*)?(?:MAYBE\s+)?(?:PLEASE|DO)\b/i;
-const INTERCAL_UNARY = "&V?∀¥∨";
+// Longest keywords first, so that the lexer's longest-match rule holds.
+const INTERCAL_KEYWORD = new RegExp(
+  "^(?:" +
+  [...INTERCAL_STATEMENTS, ...INTERCAL_MODIFIERS, ...INTERCAL_GERUNDS, ...INTERCAL_KEYWORD_OPERATORS]
+    .sort((a, b) => b.replace(/ /g, "").length - a.replace(/ /g, "").length)
+    .map((w) => w.replace(/ /g, "\\s*"))
+    .join("|") +
+  ")"
+);
+
+// Statement identifier: DO, PLEASE, PLEASE DO, their Latin forms FAC, PLACET,
+// PLACET FACERE, or MAYBE [PLEASE] [DO]; optionally followed by NOT, N'T, NON.
+const INTERCAL_IDENTIFIER =
+  /^(?:MAYBE(?:\s*PLEASE)?(?:\s*DO)?|PLEASE(?:\s*DO)?|PLACET(?:\s*FACERE)?|DO|FAC)(?:\s*(?:NOT|N'T|NON|¬))?/;
+const INTERCAL_LABEL = /^\(\s*\d[\d\s]*\)/;
+const INTERCAL_CHANCE = /^%\s*\d[\d\s]*/;
+// &, V (or), ?, ¥, ∀, V-backspace-- (xor), ^, | (sharkfin), @, 2@..5@ (whirlpools)
+const INTERCAL_UNARY = "V\\x08-|[2-5]\\s*@|[&V?¥∀^|@]";
+// $, ¢, £, ¤, U+20A0..U+20AC, ৲, ৳, ฿, c-backspace-/ and c-backspace-|
+const INTERCAL_MINGLE = /^(?:c\x08[/|]|[$¢£¤₠-€৲৳฿])/;
+// A statement C-INTERCAL can't parse runs on until the next statement
+// identifier or line label, even one in the middle of a word. A label after
+// COME FROM, NEXT FROM or CREATE is lexed as part of that keyword.
+const INTERCAL_STATEMENT_END =
+  /DO|FAC|PLEASE|PLACET|MAYBE|(?<!(?:(?:COME|NEXT)\s*FROM|ADVENIRE\s*DE|DEINDERE\s*A|CREATE|CONFICE)\s*)\(\s*\d[\d\s]*\)/g;
 
 function tokenizeIntercal(source: string): Token[] {
   const tokens: Token[] = [];
-  // Unparseable statements (e.g. PLEASE NOTE ...) are comments and run on
-  // until the next statement identifier.
   let comment = false;
+  // After a statement identifier, whitespace (newlines included) may come
+  // before NOT, the execution chance and the statement itself.
+  let expect: "not" | "chance" | "statement" | null = null;
 
   const lines = source.split("\n");
   for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
     const line = lines[lineIndex];
     let pos = 0;
-    if (comment && !INTERCAL_LINE_START.test(line)) {
-      if (line) tokens.push({ text: line, kind: "comment" });
-      pos = line.length;
-    } else {
-      comment = false;
-    }
     while (pos < line.length) {
+      if (comment) {
+        INTERCAL_STATEMENT_END.lastIndex = pos;
+        const end = INTERCAL_STATEMENT_END.exec(line);
+        const stop = end ? end.index : line.length;
+        if (stop > pos) tokens.push({ text: line.slice(pos, stop), kind: "comment" });
+        pos = stop;
+        if (end) comment = false;
+        continue;
+      }
       const rest = line.slice(pos);
       let m: RegExpExecArray | null;
       if ((m = /^\s+/.exec(rest))) {
         tokens.push({ text: m[0] });
         pos += m[0].length;
-      } else if ((m = /^\(\d+\)/.exec(rest))) {
-        tokens.push({ text: m[0], kind: "tag" });
+      } else if (expect === "not" && (m = /^(?:NOT|N'T|NON|¬)/.exec(rest))) {
+        tokens.push({ text: m[0], kind: "annotation" });
         pos += m[0].length;
+        expect = "chance";
+      } else if (expect !== "statement" && expect && (m = INTERCAL_CHANCE.exec(rest))) {
+        tokens.push({ text: m[0], kind: "meta" });
+        pos += m[0].length;
+        expect = "statement";
+      } else if (expect) {
+        const keyword = INTERCAL_KEYWORD.exec(rest);
+        comment =
+          !/^[.:,;#'"!(]/.test(rest) &&
+          !INTERCAL_IDENTIFIER.test(rest) &&
+          !(keyword && INTERCAL_STATEMENT_WORDS.has(keyword[0].replace(/\s/g, "")));
+        expect = null;
       } else if ((m = INTERCAL_IDENTIFIER.exec(rest))) {
         tokens.push({ text: m[0], kind: "annotation" });
         pos += m[0].length;
-        const chance = /^(\s*)(%\d+)/.exec(line.slice(pos));
-        if (chance) {
-          if (chance[1]) tokens.push({ text: chance[1] });
-          tokens.push({ text: chance[2], kind: "meta" });
-          pos += chance[0].length;
-        }
-        const body = line.slice(pos);
-        const lead = /^\s*/.exec(body)![0];
-        const statement = body.slice(lead.length);
-        if (
-          statement &&
-          !INTERCAL_STATEMENT.test(statement) &&
-          !/^[.:,;#'"(]/.test(statement)
-        ) {
-          if (lead) tokens.push({ text: lead });
-          tokens.push({ text: statement, kind: "comment" });
-          pos = line.length;
-          comment = true;
-        }
-      } else if ((m = new RegExp(`^([.:,;#])([${INTERCAL_UNARY}]?)(\\d+)`).exec(rest))) {
+        expect = /(?:NOT|N'T|NON|¬)$/.test(m[0]) ? "chance" : "not";
+      } else if ((m = INTERCAL_LABEL.exec(rest))) {
+        tokens.push({ text: m[0], kind: "tag" });
+        pos += m[0].length;
+      } else if ((m = INTERCAL_CHANCE.exec(rest))) {
+        tokens.push({ text: m[0], kind: "meta" });
+        pos += m[0].length;
+      } else if ((m = new RegExp(`^([.:,;#!])(\\s*)(?:(${INTERCAL_UNARY})(\\s*))?(\\d+)`).exec(rest))) {
+        // ! is a spark and a spot run together: !1 means '.1
         const kind = m[1] === "#" ? "number" : "variable";
-        if (m[2]) {
-          tokens.push({ text: m[1], kind });
-          tokens.push({ text: m[2], kind: "operator" });
-          tokens.push({ text: m[3], kind });
-        } else {
+        if (m[0] === m[1] + m[5] && m[1] !== "!") {
           tokens.push({ text: m[0], kind });
+        } else {
+          tokens.push({ text: m[1], kind: m[1] === "!" ? "bracket" : kind });
+          if (m[2]) tokens.push({ text: m[2] });
+          if (m[3]) tokens.push({ text: m[3], kind: "operator" });
+          if (m[4]) tokens.push({ text: m[4] });
+          tokens.push({ text: m[5], kind });
         }
         pos += m[0].length;
-      } else if ((m = new RegExp(`^(['"])([${INTERCAL_UNARY}]?)`).exec(rest))) {
-        tokens.push({ text: m[1], kind: "bracket" });
-        if (m[2]) tokens.push({ text: m[2], kind: "operator" });
+      } else if ((m = /^['"]/.exec(rest))) {
+        tokens.push({ text: m[0], kind: "bracket" });
         pos += m[0].length;
-      } else if ((m = /^(?:<-|[$¢~+]|(?:SUB|BY)\b)/i.exec(rest))) {
+      } else if ((m = INTERCAL_MINGLE.exec(rest)) || (m = /^(?:<-|[~/\\+])/.exec(rest))) {
         tokens.push({ text: m[0], kind: "operator" });
         pos += m[0].length;
-      } else if ((m = INTERCAL_STATEMENT.exec(rest))) {
-        tokens.push({ text: m[0], kind: "keyword" });
+      } else if ((m = INTERCAL_KEYWORD.exec(rest))) {
+        tokens.push({ text: m[0], kind: INTERCAL_KEYWORD_KINDS.get(m[0].replace(/\s/g, "")) });
         pos += m[0].length;
-      } else if ((m = INTERCAL_GERUND.exec(rest))) {
-        tokens.push({ text: m[0], kind: "type" });
+      } else if ((m = new RegExp(`^(?:${INTERCAL_UNARY})`).exec(rest))) {
+        tokens.push({ text: m[0], kind: "operator" });
         pos += m[0].length;
       } else if ((m = /^\d+/.exec(rest))) {
         tokens.push({ text: m[0], kind: "number" });
         pos += m[0].length;
-      } else if ((m = /^[A-Za-z]+/.exec(rest))) {
-        tokens.push({ text: m[0] });
-        pos += m[0].length;
       } else {
-        tokens.push({ text: line[pos++] });
+        // Other letters are lexed one at a time; keep them in one text node.
+        const last = tokens[tokens.length - 1];
+        if (last && !last.kind && last.text !== "\n") last.text += line[pos++];
+        else tokens.push({ text: line[pos++] });
       }
     }
     if (lineIndex < lines.length - 1) tokens.push({ text: "\n" });

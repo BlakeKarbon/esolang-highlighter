@@ -1,25 +1,36 @@
-## Syntax highlighting for INTERCAL (INTERCAL-72 and C-INTERCAL extensions).
+## Syntax highlighting for INTERCAL, as C-INTERCAL lexes it: keywords are
+## uppercase and need no word boundaries (DOUBLE is DO followed by UBLE), and
+## whitespace inside a keyword is optional.
 
-syntax intercal "\.(i|intercal)$"
-header "^[[:space:]]*(\([0-9]+\)[[:space:]]*)?(PLEASE|DO)\>"
+syntax intercal "\.(i|[3-7]i|intercal)$"
+header "^[[:space:]]*(\([[:space:]]*[0-9][0-9[:space:]]*\)[[:space:]]*)?(MAYBE|PLEASE|PLACET|DO|FAC)"
 comment ""
 
 # Later rules paint over earlier ones.
 color brightgreen "[0-9]+"
-color brightcyan "[.:,;][&V?∀¥∨]?[0-9]+"
-color brightgreen "#[&V?∀¥∨]?[0-9]+"
-# Unary operators follow a variable sigil, mesh or grouping mark.
-color red "[.:,;#'"][&V?∀¥∨]"
+# Unary operators: &, V, ?, ¥, ∀ (or, xor), ^, | (sharkfin), @, 2@..5@
+color red "V|[2-5][[:space:]]*@|[&?¥∀^|@]"
+# ! is a spark and a spot run together: !1 means '.1
+color brightcyan "[.:,;!][[:space:]]*((V|[2-5][[:space:]]*@|[&?¥∀^|@])[[:space:]]*)?[0-9]+"
+color brightgreen "#[[:space:]]*((V|[2-5][[:space:]]*@|[&?¥∀^|@])[[:space:]]*)?[0-9]+"
+color red "[.:,;#!][[:space:]]*(V|[2-5][[:space:]]*@|[&?¥∀^|@])"
 color brightcyan "[.:,;]"
 color brightgreen "#"
-color magenta "['"]"
-icolor red "<-|[$~+]|¢|\<(SUB|BY)\>"
-color brightcyan "\([0-9]+\)"
-color brightyellow "%[0-9]+"
-icolor magenta "\<(ABSTAIN([[:space:]]+FROM)?|REINSTATE|COME[[:space:]]+FROM|NEXT([[:space:]]+FROM)?|FORGET|RESUME|STASH|RETRIEVE|IGNORE|REMEMBER|GIVE[[:space:]]+UP|READ[[:space:]]+OUT|WRITE[[:space:]]+IN|TRY[[:space:]]+AGAIN|GO[[:space:]]+(BACK|AHEAD)|WHILE|ONCE|AGAIN)\>"
-icolor cyan "\<(CALCULATING|NEXTING([[:space:]]+FROM)?|FORGETTING|RESUMING|STASHING|RETRIEVING|IGNORING|REMEMBERING|ABSTAINING|REINSTATING|READING[[:space:]]+OUT|WRITING[[:space:]]+IN|COMING[[:space:]]+FROM|GIVING[[:space:]]+UP|TRYING[[:space:]]+AGAIN|GOING[[:space:]]+(BACK|AHEAD)|COMMENTING)\>"
-# Statement identifier: DO, PLEASE, PLEASE DO, optionally MAYBE and NOT / N'T
-icolor brightblue "\<(MAYBE[[:space:]]+)?(PLEASE([[:space:]]+DO)?|DO)(N'T|[[:space:]]+NOT)?\>"
-# nano cannot tell valid statements from invalid ones, so only the
-# conventional PLEASE NOTE / DO NOTE comments are recognised.
-icolor green "\<NOTE\>.*"
+color magenta "['"!]"
+# Mingle is $, ¢, £, ¤, U+20A0..U+20AC, ৲, ৳ or ฿
+color red "<-|[$¢£¤₠₡₢₣₤₥₦₧₨₩₪₫€৲৳฿~/\+]|SUB|BY|MULTIPLICATUS[[:space:]]*A"
+color magenta "FORGET|ALIENERE|RESUME|RECOLERE|STASH|EXUERE|RETRIEVE|INUERE|IGNORE|DISSIMULARE|REMEMBER|MEMINISSE|ABSTAIN|ABSTINERE|REINSTATE|REINSTARE|READ[[:space:]]*OUT|LEGERE[[:space:]]*EX|WRITE[[:space:]]*IN|SCRIBERE[[:space:]]*IN|PIN|NEXT[[:space:]]*FROM|DEINDERE[[:space:]]*A|COME[[:space:]]*FROM|ADVENIRE[[:space:]]*DE|NEXT|DEINDE|GIVE[[:space:]]*UP|CONCEDERE|DESPERARE|TRY[[:space:]]*AGAIN|CONOR[[:space:]]*ITERUM|GO[[:space:]]*BACK|REDIRE|GO[[:space:]]*AHEAD|GRASSOR|CREATE|CONFICE|FROM|WHILE|ONCE|QUONDAM|AGAIN|ITERUM"
+color cyan "CALCULATING|CALCULANDUM|FORGETTING|ALIENENDUM|RESUMING|RECOLERENDUM|STASHING|EXUENDUM|RETRIEVING|INUENDUM|IGNORING|DISSIMULANDUM|REMEMBERING|MEMINISSENDUM|ABSTAINING|ABSTINENDUM|REINSTATING|REINSTATANDUM|READING[[:space:]]*OUT|LEGENDUM|WRITING[[:space:]]*IN|SCRIBENDUM|COMMENT|COMMENTS|COMMENTING|COMMEMERO|PINNING|NEXTING[[:space:]]*FROM|DEINDENDUM|COMING[[:space:]]*FROM|ADVENENDUM|NEXTING|PROXIMANDUM|WHILING|LOOPING|TRYING[[:space:]]*AGAIN|GOING[[:space:]]*BACK|REDENDUM|GOING[[:space:]]*AHEAD|CREATING|CREATION|CONFICENDUM"
+# Statements C-INTERCAL can't parse are comments; nano only recognises those
+# starting with a letter no statement starts with (as in PLEASE NOTE, which
+# is PLEASE NOT followed by E). They run on until the next statement
+# identifier or line label, even one in the middle of a word.
+color green start="(MAYBE|PLEASE|PLACET|DO)([[:space:]]*(NOT|N'T|NON|¬))?[[:space:]]*(%[[:space:]]*[0-9]+[[:space:]]*)?(E([^X]|X[^U]|$)|[BHJKOQUVXYZa-z])" end="MAYBE|PLEASE|PLACET|DO|FAC|\([[:space:]]*[0-9][0-9[:space:]]*\)"
+# nano can't start a comment at the identifier that ended the previous one,
+# so also colour each comment's first line on its own.
+color green "(MAYBE|PLEASE|PLACET|DO)([[:space:]]*(NOT|N'T|NON|¬))?[[:space:]]*(%[[:space:]]*[0-9]+[[:space:]]*)?(E([^X]|X[^U]|$)|[BHJKOQUVXYZa-z])([^DPM(]|D[^O]|P[^L]|M[^A]|\([^[:space:]0-9])*"
+color brightcyan "\([[:space:]]*[0-9][0-9[:space:]]*\)"
+color brightyellow "%[[:space:]]*[0-9]+"
+# Statement identifier: DO, PLEASE, PLEASE DO, their Latin forms FAC, PLACET,
+# PLACET FACERE, or MAYBE [PLEASE] [DO]; optionally followed by NOT, N'T, NON.
+color brightblue "(MAYBE([[:space:]]*PLEASE)?([[:space:]]*DO)?|PLEASE([[:space:]]*DO)?|PLACET([[:space:]]*FACERE)?|DO|FAC)([[:space:]]*(NOT|N'T|NON|¬))?"

@@ -21,7 +21,7 @@
     "extension": true,
     "outputDir": "jupyterlab/extension",
     "_build": {
-      "load": "static/remoteEntry.4c2f03d1a321672cc711.js",
+      "load": "static/remoteEntry.4bef7df80e71f6ae9aba.js",
       "extension": "./extension"
     }
   }
